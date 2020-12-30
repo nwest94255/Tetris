@@ -15,10 +15,11 @@ public class Block_Manager : MonoBehaviour
     public int rotdelay = 5;
     public int gridwidth = 12;
     public int gridheight = 22;
+    public Vector3 spawnPos = new Vector3(6,0,0);
 
-    /*public bool checkpos(Vector3 pos)
+    public void SpawnTetromino()
     {
-
-
-    }*/
+        int tetnum = Random.Range(0,6);
+        Instantiate(Resources.Load(tetnum.ToString()), spawnPos, new Quaternion(0,0,0,0));
+    }
 }

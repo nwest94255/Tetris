@@ -12,9 +12,10 @@ public class Block_Entity : MonoBehaviour
     Block_Manager bman;                                         // The BlockManager is where we'll get most of our external variables
     public GameObject axis;                                     // GameObject used to rotate our tetromino
     public Transform[] blocks;                                  // All of the blocks in our tetromino
-    int fallTimer = 0;                                          // Countdown timer used to add steps between falls
-    int inputDelayTimer = 0;                                    // Countdown timer used in L/R movement
+    int fallTimer = 0;                                          // Countdown timer used to add pauses between falls
+    int inputDelayTimer = 0;                                    // Countdown timer used to add pauses during L/R movement
     int rotateDelayTimer = 0;                                   // Countdown timer used in tetromino rotation
+    int startRotation = 0;                                      // We give the tetromino a random start rotation on awake
     public bool stopMovement = false;                           // Freezes movement when the tetromino reaches the bottom of the grid
     public bool canrotate = true;                               // Squares can't rotate
 
@@ -22,6 +23,13 @@ public class Block_Entity : MonoBehaviour
     {// Initialize Objects///////////////////////////////////////////////////////////////////////////////////////////////////////// x /
         bman = GameObject.FindObjectOfType<Block_Manager>();
         fallTimer = bman.falltime;
+
+        // Decide random rotation
+        int sr = Random.Range(0,2);
+        if(sr == 1) startRotation = 90;
+
+        axis.transform.eulerAngles = 
+                new Vector3(axis.transform.eulerAngles.x, axis.transform.eulerAngles.y, axis.transform.eulerAngles.z + startRotation);
     }
     void Update()
     {// Put input code here /////////////////////////////////////////////////////////////////////////////////////////////////////// x /
@@ -57,12 +65,13 @@ public class Block_Entity : MonoBehaviour
                 }
             }
 
+            // Rotate
             if(rotateDelayTimer <= 0 && canrotate)
             {
                 if(Input.GetButtonDown("Fire1"))
                 {
                     axis.transform.eulerAngles = 
-                        new Vector3(axis.transform.eulerAngles.x, axis.transform.eulerAngles.y, axis.transform.eulerAngles.z + 90);
+                        new Vector3(axis.transform.eulerAngles.x, axis.transform.eulerAngles.y, axis.transform.eulerAngles.z - 90);
 
                     rotateDelayTimer = bman.rotdelay;
                     RotateCorrection();
@@ -95,30 +104,30 @@ public class Block_Entity : MonoBehaviour
             }
             else
             {
-                // Gravity
+                // Check if we can move down
                 if(CheckPositionDown())
                 {
+                    // Move down
                     transform.position += new Vector3(0,-1,0);
 
+                    // Regular fall speed
                     if(Input.GetAxis("Vertical") >= 0)
-                    {
                         fallTimer = bman.falltime;
-                    }
+                    
+                    // Fast fall speed
                     else
-                    {
                         fallTimer = bman.fastfalltime;
-                    }
                 }
             }
         }
     }
     void RotateCorrection()
-    {// If we've rotated out of bounds, put us back /////////////////////////////////////////////////////////////////////////////// x /
+    {// If we've rotated out of bounds, put us back in bounds ///////////////////////////////////////////////////////////////////// x /
 
         for(int i = 0; i < blocks.Length; i++)
         {
             // Too Far Left
-            if(blocks[i].transform.position.x < -1)
+            if(blocks[i].transform.position.x < 0)
             {
                 transform.position += new Vector3(1,0,0);
             }
@@ -134,20 +143,21 @@ public class Block_Entity : MonoBehaviour
     bool CheckPositionDown()
     {// Can we still move down? /////////////////////////////////////////////////////////////////////////////////////////////////// x /
 
-        // Get blocks that have already spawned
+        // Get all of the blocks in the scene
         GameObject[] megaBlocks = GameObject.FindGameObjectsWithTag("block");
 
-        // Check the y coordinate of each block
+        // Check the y coordinate of each block attached to us
         for(int i = 0; i < blocks.Length; i++)
         {
             // The next block position is outside the grid
             if(blocks[i].transform.position.y - 1 < -bman.gridheight)
             {
                 stopMovement = true;
+                bman.SpawnTetromino();
                 return false;
             }
 
-            // Check for blocks below us
+            // Check for blocks below us that aren't attached to us
             for(int j = 0; j < megaBlocks.Length; j++)
             {
                 if(blocks[i].transform.position + new Vector3(0,-1,0) == megaBlocks[j].transform.position)
@@ -155,6 +165,7 @@ public class Block_Entity : MonoBehaviour
                     if(megaBlocks[j].transform.parent.gameObject != axis)
                     {
                         stopMovement = true;
+                        bman.SpawnTetromino();
                         return false;
                     }
                 }
@@ -167,13 +178,13 @@ public class Block_Entity : MonoBehaviour
     bool CheckPositionLeftRight(string dir)
     {// Can we still move down? /////////////////////////////////////////////////////////////////////////////////////////////////// x /
 
-        // Get blocks that have already spawned
+        // Get all of the blocks in the scene
         GameObject[] megaBlocks = GameObject.FindGameObjectsWithTag("block");
 
-        // Check the X coordinate of each block
+        // Check the x coordinate of each block attached to us
         for(int i = 0; i < blocks.Length; i++)
         {
-            // The next block position too far forward
+            // The next position too far forward
             if(dir == ">")
             {
                 if(blocks[i].transform.position.x + 1 > bman.gridwidth)
@@ -181,7 +192,7 @@ public class Block_Entity : MonoBehaviour
                     return false;
                 }
 
-                // Check for blocks to the right of us
+                // Check for blocks while moving right
                 for(int j = 0; j < megaBlocks.Length; j++)
                 {
                     if(blocks[i].transform.position + new Vector3(1,0,0) == megaBlocks[j].transform.position)
@@ -194,15 +205,15 @@ public class Block_Entity : MonoBehaviour
                 }
             }
 
-            // The next block position is too far backward
+            // The next position is too far backward
             if(dir == "<")
             {
-                if(blocks[i].transform.position.x - 1 < 0)
+                if(blocks[i].transform.position.x  < 0)
                 {
                     return false;
                 }
 
-                // Check for blocks to the left of us
+                // Check for blocks while moving left
                 for(int j = 0; j < megaBlocks.Length; j++)
                 {
                     if(blocks[i].transform.position + new Vector3(-1,0,0) == megaBlocks[j].transform.position)
