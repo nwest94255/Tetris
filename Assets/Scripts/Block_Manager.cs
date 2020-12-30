@@ -10,7 +10,9 @@ public class Block_Manager : MonoBehaviour
 	//
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     public int falltime = 20;
+    public int fastfalltime = 5;
     public int inputdelay = 5;
+    public int rotdelay = 5;
     public int gridwidth = 12;
     public int gridheight = 22;
 
