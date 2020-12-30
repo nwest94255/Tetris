@@ -16,6 +16,7 @@ public class Block_Entity : MonoBehaviour
     int inputDelayTimer = 0;                                    // Countdown timer used in L/R movement
     int rotateDelayTimer = 0;                                   // Countdown timer used in tetromino rotation
     public bool stopMovement = false;                           // Freezes movement when the tetromino reaches the bottom of the grid
+    public bool canrotate = true;                               // Squares can't rotate
 
     void Awake()
     {// Initialize Objects///////////////////////////////////////////////////////////////////////////////////////////////////////// x /
@@ -56,7 +57,7 @@ public class Block_Entity : MonoBehaviour
                 }
             }
 
-            if(rotateDelayTimer <= 0)
+            if(rotateDelayTimer <= 0 && canrotate)
             {
                 if(Input.GetButtonDown("Fire1"))
                 {
@@ -133,6 +134,9 @@ public class Block_Entity : MonoBehaviour
     bool CheckPositionDown()
     {// Can we still move down? /////////////////////////////////////////////////////////////////////////////////////////////////// x /
 
+        // Get blocks that have already spawned
+        GameObject[] megaBlocks = GameObject.FindGameObjectsWithTag("block");
+
         // Check the y coordinate of each block
         for(int i = 0; i < blocks.Length; i++)
         {
@@ -142,6 +146,19 @@ public class Block_Entity : MonoBehaviour
                 stopMovement = true;
                 return false;
             }
+
+            // Check for blocks below us
+            for(int j = 0; j < megaBlocks.Length; j++)
+            {
+                if(blocks[i].transform.position + new Vector3(0,-1,0) == megaBlocks[j].transform.position)
+                {
+                    if(megaBlocks[j].transform.parent.gameObject != axis)
+                    {
+                        stopMovement = true;
+                        return false;
+                    }
+                }
+            }
         }
 
         // No blocks are outside the grid
@@ -149,6 +166,9 @@ public class Block_Entity : MonoBehaviour
     }
     bool CheckPositionLeftRight(string dir)
     {// Can we still move down? /////////////////////////////////////////////////////////////////////////////////////////////////// x /
+
+        // Get blocks that have already spawned
+        GameObject[] megaBlocks = GameObject.FindGameObjectsWithTag("block");
 
         // Check the X coordinate of each block
         for(int i = 0; i < blocks.Length; i++)
@@ -160,6 +180,18 @@ public class Block_Entity : MonoBehaviour
                 {
                     return false;
                 }
+
+                // Check for blocks to the right of us
+                for(int j = 0; j < megaBlocks.Length; j++)
+                {
+                    if(blocks[i].transform.position + new Vector3(1,0,0) == megaBlocks[j].transform.position)
+                    {
+                        if(megaBlocks[j].transform.parent.gameObject != axis)
+                        {
+                            return false;
+                        }
+                    }
+                }
             }
 
             // The next block position is too far backward
@@ -168,6 +200,18 @@ public class Block_Entity : MonoBehaviour
                 if(blocks[i].transform.position.x - 1 < 0)
                 {
                     return false;
+                }
+
+                // Check for blocks to the left of us
+                for(int j = 0; j < megaBlocks.Length; j++)
+                {
+                    if(blocks[i].transform.position + new Vector3(-1,0,0) == megaBlocks[j].transform.position)
+                    {
+                        if(megaBlocks[j].transform.parent.gameObject != axis)
+                        {
+                            return false;
+                        }
+                    }
                 }
             }
         }
