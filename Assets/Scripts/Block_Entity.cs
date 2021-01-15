@@ -18,10 +18,14 @@ public class Block_Entity : MonoBehaviour
     int startRotation = 0;                                      // We give the tetromino a random start rotation on awake
     public bool stopMovement = false;                           // Freezes movement when the tetromino reaches the bottom of the grid
     public bool canrotate = true;                               // Squares can't rotate
+    int selfdestructtimer = 0;                                  // Wait some time before setting up the next block
+    public bool selfdestruct = false;                           
 
     void Awake()
     {// Initialize Objects///////////////////////////////////////////////////////////////////////////////////////////////////////// x /
         bman = GameObject.FindObjectOfType<Block_Manager>();
+        bman.RefreshBlocks();
+
         fallTimer = bman.falltime;
 
         // Decide random rotation
@@ -30,6 +34,29 @@ public class Block_Entity : MonoBehaviour
 
         axis.transform.eulerAngles = 
                 new Vector3(axis.transform.eulerAngles.x, axis.transform.eulerAngles.y, axis.transform.eulerAngles.z + startRotation);
+
+        if(!CheckPositionDown())
+        {
+            bman.ingameover = true;
+            bman.GameOver();
+        }
+    }
+    public void Nullify()
+    {// Remove tetromino if it has no blocks left in it /////////////////////////////////////////////////////////////////////////// x /
+    
+        // The number null blocks in our tetromino
+        int nullblocks = 0;
+
+        // Check for null blocks
+        for(int i = 0; i < blocks.Length; i++)
+        {
+            if(blocks[i] == null)
+                nullblocks++;
+        }
+
+        // If all of our blocks are null, destroy this
+        if(nullblocks >= 4)
+            Destroy(this.gameObject);
     }
     void Update()
     {// Put input code here /////////////////////////////////////////////////////////////////////////////////////////////////////// x /
@@ -83,6 +110,20 @@ public class Block_Entity : MonoBehaviour
     void FixedUpdate()
     {// Put time sensitive code here ////////////////////////////////////////////////////////////////////////////////////////////// x /
 
+        // Wait some time after we've stopped before setting up the next block
+        if(selfdestructtimer > 0)
+        {
+            selfdestructtimer--;
+        }
+        else
+        {
+            if(selfdestruct)
+            {
+                bman.CheckAllRows();
+                selfdestruct = false;
+            }
+        }
+
         if(!stopMovement)
         {
             // Delay between rotations
@@ -118,6 +159,12 @@ public class Block_Entity : MonoBehaviour
                     else
                         fallTimer = bman.fastfalltime;
                 }
+                else if (!stopMovement && fallTimer <= 0)
+                {
+                    selfdestructtimer = 10;
+                    selfdestruct = true;
+                    stopMovement = true;
+                }
             }
         }
     }
@@ -152,8 +199,6 @@ public class Block_Entity : MonoBehaviour
             // The next block position is outside the grid
             if(blocks[i].transform.position.y - 1 < -bman.gridheight)
             {
-                stopMovement = true;
-                bman.SpawnTetromino();
                 return false;
             }
 
@@ -164,8 +209,6 @@ public class Block_Entity : MonoBehaviour
                 {
                     if(megaBlocks[j].transform.parent.gameObject != axis)
                     {
-                        stopMovement = true;
-                        bman.SpawnTetromino();
                         return false;
                     }
                 }
